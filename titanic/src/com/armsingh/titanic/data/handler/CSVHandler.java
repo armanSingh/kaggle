@@ -24,7 +24,7 @@ public class CSVHandler {
 	 * @return filePath The ARFF file path.
 	 * @throws IOException If no file with the specified name is found in the expected directories
 	 */
-	public static String toARFF(String fileName) throws IOException {
+	public static String saveAsARFF(String fileName) throws IOException {
 		File sourceFile = new File(getCSVPath(fileName));
 		CSVLoader csvLoader = new CSVLoader();
 		csvLoader.setSource(sourceFile);

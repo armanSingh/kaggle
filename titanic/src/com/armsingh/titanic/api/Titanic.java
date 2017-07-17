@@ -28,45 +28,66 @@ public class Titanic {
 	private static final String TRAINING_FILE_NAME = "train";
 	private static final String TEST_FILE_NAME = "test";
 	private static final String RESULT_FILE_NAME = "result";
+	private static final String RESULT_FILE_PATH = "data/arff/" + RESULT_FILE_NAME + ".arff";
 	
 	public static void main(String[] args) throws Exception {
-		String arffTrainFilePath = CSVHandler.toARFF(TRAINING_FILE_NAME);
-		String arffTestFilePath = CSVHandler.toARFF(TEST_FILE_NAME);
+		
+		// Save the CSV files in ARFF format
+		String arffTrainFilePath = CSVHandler.saveAsARFF(TRAINING_FILE_NAME);
+		String arffTestFilePath = CSVHandler.saveAsARFF(TEST_FILE_NAME);
 		
 		BufferedReader reader = new BufferedReader(new FileReader(arffTrainFilePath));
 		Instances trainData = new Instances(reader);
-		reader.close();
-		
+		// Read the test data
 		reader = new BufferedReader(new FileReader(arffTestFilePath));
-		Instances testDataUnlabeled = new Instances(reader);
-		testDataUnlabeled.setClassIndex(testDataUnlabeled.numAttributes()-1);
+		Instances testData = new Instances(reader);
 		reader.close();
 		
+		testData.setClassIndex(testData.numAttributes()-1);
 		trainData.setClassIndex(trainData.numAttributes() - 1);
 		
-		NumericToNominal filter = new NumericToNominal();
-		filter.setAttributeIndices(String.valueOf(trainData.classIndex() + 1));
-		filter.setInputFormat(trainData);
-		trainData = Filter.useFilter(trainData, filter);
-		testDataUnlabeled = Filter.useFilter(testDataUnlabeled, filter);
-		System.out.println(testDataUnlabeled.toSummaryString());
+		//J48 expects the class to be non-numeric. Need to figure out why. Also, the attribute indices are wrt 1 and not 0.
+		Instances filteredTrainData = filterNumericToNominal(trainData, String.valueOf(trainData.classIndex() + 1));
+		Instances filteredTestData = filterNumericToNominal(testData, String.valueOf(testData.classIndex() + 1));
 		
+		classifyAndSave(filteredTrainData, filteredTestData);
+		System.out.println(" ------- Done -------");
+	}
+	
+	/**
+	 * For now this is hard coupled with J48 classifier.
+	 * TODO: Decouple this with respect to the type of the classifier.
+	 * @param trainData
+	 * @param testData
+	 * @throws Exception
+	 */
+	private static void classifyAndSave(Instances trainData, Instances testData) throws Exception {
 		J48 tree = new J48();
 		tree.buildClassifier(trainData);
 		
-		for(int i=0; i<testDataUnlabeled.numInstances(); ++i) {
-			Double clas = tree.classifyInstance(testDataUnlabeled.instance(i));
-			testDataUnlabeled.instance(i).setClassValue(clas);
+		for(int i=0; i<testData.numInstances(); ++i) {
+			Double clas = tree.classifyInstance(testData.instance(i));
+			testData.instance(i).setClassValue(clas);
 		}
 		
-		File resultFile = new File("data/arff/" + RESULT_FILE_NAME + ".arff");
+		File resultFile = new File(RESULT_FILE_PATH);
 		resultFile.createNewFile();
+		
+		//Write the contents to disk
 		BufferedWriter writer = new BufferedWriter(new FileWriter(resultFile));
-		writer.write(testDataUnlabeled.toString());
+		writer.write(testData.toString());
 		writer.newLine();
 		writer.flush();
 		writer.close();
-		ARFFHandler.toCSV(RESULT_FILE_NAME);
-		System.out.println(testDataUnlabeled.toSummaryString());
+		
+		//save as a CSV file as well for easy access using excel.
+		ARFFHandler.saveAsCSV(RESULT_FILE_NAME);
+	}
+	
+	private static Instances filterNumericToNominal(Instances instances, String attributeIndex) throws Exception {
+		NumericToNominal filter = new NumericToNominal();
+		filter.setAttributeIndices(attributeIndex);
+		filter.setInputFormat(instances);
+		return Filter.useFilter(instances, filter);
 	}
 }

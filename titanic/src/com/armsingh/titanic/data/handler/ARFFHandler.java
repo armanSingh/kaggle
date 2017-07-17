@@ -17,14 +17,14 @@ public class ARFFHandler {
 	private ARFFHandler() {} 
 	
 	/**
-	 * The method takes in the ARFF file name and creates the arff file.
+	 * The method takes in the ARFF file name and saves the arff file.
 	 * The ARFF file is expected to be present in data/arff/ directory. The CSV file is expected to be present in data/csv/ directory.
 	 *  
 	 * @param fileName The ARFF file name. 
 	 * @return filePath The CSV file path.
 	 * @throws IOException If no file with the specified name is found in the expected directories
 	 */
-	public static String toCSV(String fileName) throws IOException {
+	public static String saveAsCSV(String fileName) throws IOException {
 		File sourceFile = new File(getARFFPath(fileName));
 		ArffLoader arffLoader = new ArffLoader();
 		arffLoader.setSource(sourceFile);
