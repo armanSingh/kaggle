@@ -17,10 +17,10 @@ import weka.filters.unsupervised.attribute.NumericToNominal;
 
 /**
  * This was my first submission, made solely from the point of view of checking the evaluation process.
- * The submission earned a score of 0.76555, ranked 5322. 
- * TODO: 1. Organize the code better
- *       2. Choose the right classifier, fine tune it for performance.
- *       3. Improve the score.
+ *  Attempt 1: -- The submission earned a score of 0.76555, ranked 5322. --
+ *  Attempt 2: -- Feature selection, score: 0.7752, ranked: 4038 
+ * TODO: 1. Choose the right classifier, fine tune it for performance.
+ *       2. Improve the score.
  * @author armsingh
  *
  */
@@ -28,10 +28,9 @@ public class Titanic {
 	private static final String TRAINING_FILE_NAME = "train";
 	private static final String TEST_FILE_NAME = "test";
 	private static final String RESULT_FILE_NAME = "result";
-	private static final String RESULT_FILE_PATH = "data/arff/" + RESULT_FILE_NAME + ".arff";
+	private static final String RESULT_FILE_PATH = "data/arff/" +RESULT_FILE_NAME + ".arff";
 	
 	public static void main(String[] args) throws Exception {
-		
 		// Save the CSV files in ARFF format
 		String arffTrainFilePath = CSVHandler.saveAsARFF(TRAINING_FILE_NAME);
 		String arffTestFilePath = CSVHandler.saveAsARFF(TEST_FILE_NAME);
@@ -43,33 +42,32 @@ public class Titanic {
 		Instances testData = new Instances(reader);
 		reader.close();
 		
-		testData.setClassIndex(testData.numAttributes()-1);
+		testData.setClassIndex(testData.numAttributes() - 1);
 		trainData.setClassIndex(trainData.numAttributes() - 1);
 		
-		//J48 expects the class to be non-numeric. Need to figure out why. Also, the attribute indices are wrt 1 and not 0.
-		Instances filteredTrainData = filterNumericToNominal(trainData, String.valueOf(trainData.classIndex() + 1));
-		Instances filteredTestData = filterNumericToNominal(testData, String.valueOf(testData.classIndex() + 1));
+		//J48 expects the class to be non-numeric. Need to figure out why. Also, the attribute indices are wrt 1.
+		Instances filteredTrainData = filterNumericToNominal(trainData, String.valueOf(trainData.classIndex()+1));
+		Instances filteredTestData = filterNumericToNominal(testData, String.valueOf(testData.classIndex()+1));
 		
 		classifyAndSave(filteredTrainData, filteredTestData);
-		System.out.println(" ------- Done -------");
+		System.out.println("------- Done -------");
 	}
 	
 	/**
 	 * For now this is hard coupled with J48 classifier.
-	 * TODO: Decouple this with respect to the type of the classifier.
 	 * @param trainData
 	 * @param testData
 	 * @throws Exception
 	 */
 	private static void classifyAndSave(Instances trainData, Instances testData) throws Exception {
-		J48 tree = new J48();
-		tree.buildClassifier(trainData);
+		
+		J48 classifier = new J48();
+		classifier.buildClassifier(trainData);
 		
 		for(int i=0; i<testData.numInstances(); ++i) {
-			Double clas = tree.classifyInstance(testData.instance(i));
+			Double clas = classifier.classifyInstance(testData.instance(i));
 			testData.instance(i).setClassValue(clas);
 		}
-		
 		File resultFile = new File(RESULT_FILE_PATH);
 		resultFile.createNewFile();
 		
